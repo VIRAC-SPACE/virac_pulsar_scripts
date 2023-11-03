@@ -15,7 +15,7 @@ def get_freq(psredit_result):
 
 def profile_function(x, A, alpha, thata_min):
     return A * (x ** (-alpha)) + thata_min
-
+    
 
 def gauss(x, mu, sigma, amplitude):
     return amplitude * (
@@ -59,6 +59,14 @@ def main(pulsar, componet_count):
 
     paas_m_files = sorted([file for file in os.listdir(path) if file.endswith(".paas.m")])
     paas_txt_files = sorted([file for file in os.listdir(path) if file.endswith(".paas.txt")])
+    
+    colors = []
+    
+    for tmp in paas_txt_files:
+        if "combine_lanes" in tmp:
+            colors.append("r")
+        else:
+            colors.append("y")
 
     print(paas_m_files)
     print(paas_txt_files)
@@ -122,7 +130,7 @@ def main(pulsar, componet_count):
 
             result_gauss3 = model_gauss3.fit(data=model_data, x=phase, params=parameters_gauss3, method='leastsq',
                                              nan_policy='omit')
-            # report_fit(result_gauss3)
+            #report_fit(result_gauss3)
             print("\n\n")
             
             amplitude_fits = [result_gauss3.params["amplitude1"].value, result_gauss3.params["amplitude2"].value,
@@ -147,7 +155,7 @@ def main(pulsar, componet_count):
                                                          mu4=phase_init[3], sigma4=sigma_init[3], amplitude4=intensity_init[3])
             result_gauss4 = model_gauss4.fit(data=model_data, x=phase, params=parameters_gauss4, method='leastsq',
                                              nan_policy='omit')
-            # report_fit(result_gauss4)
+            #report_fit(result_gauss4)
             print("\n\n")
             
             amplitude_fits = [result_gauss4.params["amplitude1"].value, result_gauss4.params["amplitude2"].value,
@@ -175,7 +183,7 @@ def main(pulsar, componet_count):
 
             result_gauss5 = model_gauss5.fit(data=model_data, x=phase, params=parameters_gauss5, method='leastsq',
                                              nan_policy='omit')
-            # report_fit(result_gauss5)
+            #report_fit(result_gauss5)
             print("\n\n")
             
             amplitude_fits = [result_gauss5.params["amplitude1"].value, result_gauss5.params["amplitude2"].value,
@@ -223,8 +231,11 @@ def main(pulsar, componet_count):
 
     frequency = np.array([get_freq(subprocess.check_output(["psredit", "-c", "freq", path + fscrs_file])) for fscrs_file in fscrs_files])
 
-    thorset_frequency = np.linspace(100, 10000, 1000)
-    thorset_fit_values = {"B0301+19":[86, 0.34, 0.9], "B0329+54": [1059, 0.96, 19.8], "B0525+21":[90, 0.47, 9.5], "B1133+16":[53, 0.5, 4.4], "B1237+25":[79, 0.25, 7.9], "B2020+28":[1103, 1.08, 9.1]}
+    thorset_frequency = np.linspace(30, 10000, 1000)
+    thorset_fit_values = {"B0301+19": [86, 0.34, 0.9], "B0329+54": [1059, 0.96, 19.8], 
+                          "B0525+21": [90, 0.47, 9.5], "B1133+16": [53, 0.5, 4.4], 
+                          "B1237+25": [79, 0.25, 7.9], "B2020+28": [1103, 1.08, 9.1],
+                          "B2045-16": [45, 0.38, 7.9]}
 
     model = Model(profile_function)
     A_t = thorset_fit_values[pulsar][0]
@@ -232,12 +243,13 @@ def main(pulsar, componet_count):
     thata_min_t = thorset_fit_values[pulsar][2]
 
     parameters = model.make_params(A=A_t, alpha=alpha_t, thata_min=thata_min_t)
+    
     result = model.fit(data=phase_diff, x=frequency, params=parameters, method='leastsq', nan_policy='omit')
-
+    
     a = result.params["A"].value
     alpha = result.params["alpha"].value
     thata_min = result.params["thata_min"].value
-    report_fit(result)
+    #report_fit(result)
     
     pulsar_fit_values_file = "pulsar_fit_values.csv"
     
@@ -248,9 +260,11 @@ def main(pulsar, componet_count):
         fit_out.write(pulsar + "," + "%.3f" % a + "," + "%.3f" % alpha + "," + "%.3f" % thata_min + "," + "%.3f" % alpha_error + "," + "%.3f" % + thata_min_error + "\n")
 
     fig2, ax2 = plt.subplots(nrows=1, ncols=1, figsize=(16, 16), dpi=150)
-    ax2.scatter(frequency, phase_diff)
-    ax2.errorbar(frequency, phase_diff, yerr=np.abs(phase_diff_errors) * 100, fmt='o')
-    x = np.linspace(frequency[0], frequency[-1], 1000)
+    ax2.scatter(frequency, phase_diff, c=colors)
+    for i in range(0, len(frequency)):
+        ax2.errorbar(frequency[i], phase_diff[i], yerr=np.abs(phase_diff_errors[i]) * 100, fmt='o', c=colors[i])
+    
+    x = np.linspace(min(frequency), max(frequency), 1000)
     ax2.plot(x, profile_function(x, a, alpha, thata_min), label="LV614 LOFAR")
     ax2.plot(thorset_frequency, profile_function(thorset_frequency, A_t, alpha_t, thata_min_t), label="Thorset")
     ax2.set_xlabel("Frequency [MHz]")
@@ -258,7 +272,7 @@ def main(pulsar, componet_count):
     ax2.legend()
     fig2.tight_layout()
 
-    plt.savefig(pulsar + "_profile.png")
+    fig2.savefig(pulsar + "_profile.png")
     plt.show()
 
 
