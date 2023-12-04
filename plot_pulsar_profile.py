@@ -63,13 +63,16 @@ def main(pulsar, componet_count):
     colors = []
     symbols = []
     
+    telescopes = []
     for tmp in paas_txt_files:
         if "combine_lanes" in tmp:
             colors.append("r")
             symbols.append("s")
+            telescopes.append("LV614")
         else:
             colors.append("b")
             symbols.append("o")
+            telescopes.append("Nenufar")
 
     print(paas_m_files)
     print(paas_txt_files)
@@ -216,8 +219,9 @@ def main(pulsar, componet_count):
         phase_diff_errors.append(np.sqrt(
         phase_fits_errors[index_a] ** 2 + phase_fits_errors[index_b] ** 2))
         
-        ax1[1].plot(phase, g, label="init gauss" + str(frequency[sb]))
-        ax1[1].plot(phase, model_data, label="data" + str(frequency[sb]))
+        ax1[1].plot(phase, g, label="init gauss")
+        ax1[1].plot(phase, model_data, label="data")
+        fig1.suptitle("Frequency:" + str(frequency[sb]) + " telscope: " + telescopes[sb])
        
         ax1[0].legend()
         ax1[1].legend()
