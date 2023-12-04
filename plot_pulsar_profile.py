@@ -61,18 +61,24 @@ def main(pulsar, componet_count):
     paas_txt_files = sorted([file for file in os.listdir(path) if file.endswith(".paas.txt")])
     
     colors = []
+    symbols = []
     
     for tmp in paas_txt_files:
         if "combine_lanes" in tmp:
             colors.append("r")
+            symbols.append("s")
         else:
-            colors.append("y")
+            colors.append("b")
+            symbols.append("o")
 
     print(paas_m_files)
     print(paas_txt_files)
 
     phase_diff = []
     phase_diff_errors = []
+    
+    fscrs_files = sorted([file for file in os.listdir(path) if file.endswith(".fscr")])
+    frequency = np.array([get_freq(subprocess.check_output(["psredit", "-c", "freq", path + fscrs_file])) for fscrs_file in fscrs_files])
     for sb in range(0, len(paas_m_files)):
         print(sb)
         fig1, ax1 = plt.subplots(nrows=1, ncols=2, figsize=(8, 8), dpi=90)
@@ -210,8 +216,8 @@ def main(pulsar, componet_count):
         phase_diff_errors.append(np.sqrt(
         phase_fits_errors[index_a] ** 2 + phase_fits_errors[index_b] ** 2))
         
-        ax1[1].plot(phase, g, label="init gauss")
-        ax1[1].plot(phase, model_data, label="data")
+        ax1[1].plot(phase, g, label="init gauss" + str(frequency[sb]))
+        ax1[1].plot(phase, model_data, label="data" + str(frequency[sb]))
        
         ax1[0].legend()
         ax1[1].legend()
@@ -260,15 +266,20 @@ def main(pulsar, componet_count):
         fit_out.write(pulsar + "," + "%.3f" % a + "," + "%.3f" % alpha + "," + "%.3f" % thata_min + "," + "%.3f" % alpha_error + "," + "%.3f" % + thata_min_error + "\n")
 
     fig2, ax2 = plt.subplots(nrows=1, ncols=1, figsize=(16, 16), dpi=150)
-    ax2.scatter(frequency, phase_diff, c=colors)
+    
+    print("frequency", frequency)
+    print("phase_diff", phase_diff)
+    
     for i in range(0, len(frequency)):
-        ax2.errorbar(frequency[i], phase_diff[i], yerr=np.abs(phase_diff_errors[i]) * 100, fmt='o', c=colors[i])
+        ax2.scatter(frequency[i], phase_diff[i], c=colors[i], alpha=0.4, marker=symbols[i])
+        ax2.errorbar(frequency[i], phase_diff[i], yerr=np.abs(phase_diff_errors[i]) * 100, fmt=symbols[i], c=colors[i], xerr=10,  alpha=0)
     
     x = np.linspace(min(frequency), max(frequency), 1000)
-    ax2.plot(x, profile_function(x, a, alpha, thata_min), label="LV614 LOFAR")
-    ax2.plot(thorset_frequency, profile_function(thorset_frequency, A_t, alpha_t, thata_min_t), label="Thorset")
+    ax2.plot(x, profile_function(x, a, alpha, thata_min), label="New data", c="black", linewidth=2)
+    ax2.plot(thorset_frequency, profile_function(thorset_frequency, A_t, alpha_t, thata_min_t), c="gray", linestyle='dashed', label="Thorset", linewidth=2)
     ax2.set_xlabel("Frequency [MHz]")
     ax2.set_ylabel(r'$ \Delta \theta [deg]$')
+    ax2.set_xscale("log")
     ax2.legend()
     fig2.tight_layout()
 
