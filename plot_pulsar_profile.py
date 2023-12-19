@@ -47,10 +47,24 @@ def gauss5(x, mu1, sigma1, amplitude1, mu2, sigma2, amplitude2, mu3, sigma3, amp
         gauss(x, mu3, sigma3, amplitude3) + \
         gauss(x, mu4, sigma4, amplitude4) + \
         gauss(x, mu5, sigma5, amplitude5)
+        
+        
+def gauss6(x, mu1, sigma1, amplitude1, mu2, sigma2, amplitude2, mu3, sigma3, amplitude3, mu4, sigma4,
+           amplitude4, mu5, sigma5, amplitude5, mu6, sigma6, amplitude6):
+    return gauss(x, mu1, sigma1, amplitude1) + \
+        gauss(x, mu2, sigma2, amplitude2) + \
+        gauss(x, mu3, sigma3, amplitude3) + \
+        gauss(x, mu4, sigma4, amplitude4) + \
+        gauss(x, mu5, sigma5, amplitude5) + \
+        gauss(x, mu6, sigma6, amplitude6)
 
 
 def get_error(results, variable):
-    return np.float128(str(results.params[variable]).split(",")[1].split("+/-")[1])
+    try:
+        error = np.float128(str(results.params[variable]).split(",")[1].split("+/-")[1])
+    except:
+        error = 0
+    return error
 
 
 def main(pulsar, componet_count):
@@ -59,7 +73,17 @@ def main(pulsar, componet_count):
 
     paas_m_files = sorted([file for file in os.listdir(path) if file.endswith(".paas.m")])
     paas_txt_files = sorted([file for file in os.listdir(path) if file.endswith(".paas.txt")])
+    fscrs_files = sorted([file for file in os.listdir(path) if file.endswith(".fscr")])
     
+    print(paas_m_files)
+    print("\n\n")
+    print(paas_txt_files)
+    print("\n\n")
+    print(fscrs_files)
+    print("\n\n")
+    
+    print(len(paas_m_files), len(paas_txt_files), len(fscrs_files))
+        
     colors = []
     symbols = []
     
@@ -69,20 +93,24 @@ def main(pulsar, componet_count):
             colors.append("r")
             symbols.append("s")
             telescopes.append("LV614")
-        else:
+        elif "nuppi" in tmp:
             colors.append("b")
             symbols.append("o")
+            telescopes.append("NRT")
+        else:
+            colors.append("g")
+            symbols.append("D")
             telescopes.append("Nenufar")
-
-    print(paas_m_files)
-    print(paas_txt_files)
 
     phase_diff = []
     phase_diff_errors = []
     
-    fscrs_files = sorted([file for file in os.listdir(path) if file.endswith(".fscr")])
+    
     frequency = np.array([get_freq(subprocess.check_output(["psredit", "-c", "freq", path + fscrs_file])) for fscrs_file in fscrs_files])
     for sb in range(0, len(paas_m_files)):
+        #if sb == 6:
+            #continue
+            
         print(sb)
         fig1, ax1 = plt.subplots(nrows=1, ncols=2, figsize=(8, 8), dpi=90)
 
@@ -206,6 +234,40 @@ def main(pulsar, componet_count):
             phase_fits_errors = [get_error(result_gauss5, "mu1"), get_error(result_gauss5, "mu2"),
                                  get_error(result_gauss5, "mu3"), get_error(result_gauss5, "mu4"),
                                  get_error(result_gauss5, "mu5")]
+                                 
+        elif len(phase_init) == 6:
+             g = gauss6(phase,
+                       phase_init[0], sigma_init[0], intensity_init[0],
+                       phase_init[1], sigma_init[1], intensity_init[1],
+                       phase_init[2], sigma_init[2], intensity_init[2],
+                       phase_init[3], sigma_init[3], intensity_init[3],
+                       phase_init[4], sigma_init[4], intensity_init[4],
+                       phase_init[5], sigma_init[5], intensity_init[5])
+                       
+             model_gauss6 = Model(gauss6)
+             parameters_gauss6 = model_gauss6.make_params(mu1=phase_init[0], sigma1=sigma_init[0], amplitude1=intensity_init[0],
+                                                         mu2=phase_init[1], sigma2=sigma_init[1], amplitude2=intensity_init[1],
+                                                         mu3=phase_init[2], sigma3=sigma_init[2], amplitude3=intensity_init[2],
+                                                         mu4=phase_init[3], sigma4=sigma_init[3], amplitude4=intensity_init[3],
+                                                         mu5=phase_init[4], sigma5=sigma_init[4], amplitude5=intensity_init[4],
+                                                         mu6=phase_init[5], sigma6=sigma_init[5], amplitude6=intensity_init[5])
+
+             result_gauss6 = model_gauss6.fit(data=model_data, x=phase, params=parameters_gauss6, method='leastsq',
+                                             nan_policy='omit')
+             #report_fit(result_gauss5)
+             print("\n\n")
+             
+             amplitude_fits = [result_gauss6.params["amplitude1"].value, result_gauss6.params["amplitude2"].value,
+                          result_gauss6.params["amplitude3"].value, result_gauss6.params["amplitude4"].value,
+                          result_gauss6.params["amplitude5"].value, result_gauss6.params["amplitude6"].value]
+            
+             phase_fits = [result_gauss6.params["mu1"].value, result_gauss6.params["mu2"].value,
+                          result_gauss6.params["mu3"].value, result_gauss6.params["mu4"].value,
+                          result_gauss6.params["mu5"].value, result_gauss6.params["mu6"].value]
+
+             phase_fits_errors = [get_error(result_gauss6, "mu1"), get_error(result_gauss6, "mu2"),
+                                 get_error(result_gauss6, "mu3"), get_error(result_gauss6, "mu4"),
+                                 get_error(result_gauss6, "mu5"), get_error(result_gauss6, "mu6")]
                 
         amplitude_fits_sorted = sorted(amplitude_fits, reverse=True)
         if componet_count == 2:
@@ -234,9 +296,6 @@ def main(pulsar, componet_count):
         fig1.tight_layout()
     
     phase_diff = np.array(phase_diff) * 360
-
-    fscrs_files = sorted([file for file in os.listdir(path) if file.endswith(".fscr")])
-    print(fscrs_files)
     print("\n\n")
 
     frequency = np.array([get_freq(subprocess.check_output(["psredit", "-c", "freq", path + fscrs_file])) for fscrs_file in fscrs_files])
@@ -254,12 +313,15 @@ def main(pulsar, componet_count):
 
     parameters = model.make_params(A=A_t, alpha=alpha_t, thata_min=thata_min_t)
     
+    #print(frequency)
+    #frequency = np.array([40.13625, 77.63625, 2429, 2685, 1374, 1630])
+        
     result = model.fit(data=phase_diff, x=frequency, params=parameters, method='leastsq', nan_policy='omit')
     
     a = result.params["A"].value
     alpha = result.params["alpha"].value
     thata_min = result.params["thata_min"].value
-    #report_fit(result)
+    report_fit(result)
     
     pulsar_fit_values_file = "pulsar_fit_values.csv"
     
@@ -271,8 +333,11 @@ def main(pulsar, componet_count):
 
     fig2, ax2 = plt.subplots(nrows=1, ncols=1, figsize=(16, 16), dpi=150)
     
-    print("frequency", frequency)
-    print("phase_diff", phase_diff)
+    #print("frequency", frequency)
+    #print("phase_diff", phase_diff)
+    
+    #symbols.remove(symbols[6])
+    #colors.remove(colors[6])
     
     for i in range(0, len(frequency)):
         ax2.scatter(frequency[i], phase_diff[i], c=colors[i], alpha=0.4, marker=symbols[i])
