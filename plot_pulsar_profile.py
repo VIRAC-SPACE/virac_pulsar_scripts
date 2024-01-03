@@ -301,10 +301,13 @@ def main(pulsar, componet_count):
     frequency = np.array([get_freq(subprocess.check_output(["psredit", "-c", "freq", path + fscrs_file])) for fscrs_file in fscrs_files])
 
     thorset_frequency = np.linspace(30, 10000, 1000)
-    thorset_fit_values = {"B0301+19": [86, 0.34, 0.9], "B0329+54": [1059, 0.96, 19.8], 
-                          "B0525+21": [90, 0.47, 9.5], "B1133+16": [53, 0.5, 4.4], 
-                          "B1237+25": [79, 0.25, 7.9], "B2020+28": [1103, 1.08, 9.1],
-                          "B2045-16": [45, 0.38, 7.9]}
+    thorset_fit_values = {"B0301+19": [86, 0.34, 0.9], 
+                          "B0329+54": [1059, 0.96, 19.8], 
+                          "B0525+21": [90, 0.47, 9.5], 
+                          "B1133+16": [53, 0.50, 4.4], 
+                          "B1237+25": [79, 0.52, 7.9], 
+                          "B2020+28": [1103, 1.08, 9.1],
+                          "B2045-16": [45, 0.36, 7.9]}
 
     model = Model(profile_function)
     A_t = thorset_fit_values[pulsar][0]
