@@ -104,8 +104,7 @@ def main(pulsar, componet_count):
 
     phase_diff = []
     phase_diff_errors = []
-    
-    
+
     frequency = np.array([get_freq(subprocess.check_output(["psredit", "-c", "freq", path + fscrs_file])) for fscrs_file in fscrs_files])
     for sb in range(0, len(paas_m_files)):
         #if sb == 6:
@@ -315,10 +314,6 @@ def main(pulsar, componet_count):
     thata_min_t = thorset_fit_values[pulsar][2]
 
     parameters = model.make_params(A=A_t, alpha=alpha_t, thata_min=thata_min_t)
-    
-    #print(frequency)
-    #frequency = np.array([40.13625, 77.63625, 2429, 2685, 1374, 1630])
-        
     result = model.fit(data=phase_diff, x=frequency, params=parameters, method='leastsq', nan_policy='omit')
     
     a = result.params["A"].value
@@ -335,13 +330,7 @@ def main(pulsar, componet_count):
         fit_out.write(pulsar + "," + "%.3f" % a + "," + "%.3f" % alpha + "," + "%.3f" % thata_min + "," + "%.3f" % alpha_error + "," + "%.3f" % + thata_min_error + "\n")
 
     fig2, ax2 = plt.subplots(nrows=1, ncols=1, figsize=(16, 16), dpi=150)
-    
-    #print("frequency", frequency)
-    #print("phase_diff", phase_diff)
-    
-    #symbols.remove(symbols[6])
-    #colors.remove(colors[6])
-    
+
     for i in range(0, len(frequency)):
         ax2.scatter(frequency[i], phase_diff[i], c=colors[i], alpha=0.4, marker=symbols[i])
         ax2.errorbar(frequency[i], phase_diff[i], yerr=np.abs(phase_diff_errors[i]) * 100, fmt=symbols[i], c=colors[i], xerr=10,  alpha=0)

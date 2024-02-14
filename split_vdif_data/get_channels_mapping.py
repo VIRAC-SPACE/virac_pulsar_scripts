@@ -26,9 +26,9 @@ def main(vex_file):
     vex_data.close()
     
     print(channels_mapping)
-    
+
+
 if __name__ == "__main__":
     vex_file = sys.argv[1]
     main(vex_file)
     sys.exit()
-    
