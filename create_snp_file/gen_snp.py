@@ -33,6 +33,8 @@ def main(vex_file):
             snp.write("\" drudg version 2019Sep23 compiled under FS  9.13.02\n")
             snp.write("\" Rack=DBBC_DDC  Recorder 1=FlexBuff  Recorder 2=none\n")
 
+            new_source = True
+            source_index = 0
             for scan in range(1, nr_scans + 1):
                 if scan < 10:
                     tmp = "000"
@@ -47,8 +49,29 @@ def main(vex_file):
                 coords = format_coords(sources[source]["ra"], sources[source]["dec"])
                 snp.write("scan_name=no" + tmp + str(scan) + "," + obs_name + ",ir,"
                           + str(scan_duration) + "," + str(scan_duration) + "\n")
-                #snp.write("source=" + source.tolower() + "," + 030433.12,193251.4,2000.0,ccw")
+                snp.write("source=" + source.lower() + "," + str(coords[0]) + "," +
+                          str(coords[1]) + ",2000.0," + scan_["station"][4] + "\n")
                 snp.write("ready_disk\n")
+                snp.write("checkmk5\n")
+                snp.write("setup01\n")
+                snp.write("preob\n")
+
+                if new_source:
+                    snp.write("disk_record=on\n")
+                    new_source = False
+
+                snp.write("disk_record\n")
+
+                source_index += 1
+
+                if source_index == 4:
+                    new_source = True
+                    source_index = 0
+                    snp.write("disk_record=off\n")
+
+                snp.write("midob\n")
+                snp.write("data_valid=off\n")
+                snp.write("postob\n")
 
 
 if __name__ == "__main__":
