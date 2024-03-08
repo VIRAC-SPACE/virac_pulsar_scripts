@@ -70,7 +70,7 @@ def get_error(results, variable):
 def main(pulsar, componet_count):
     plt.style.use("plot.style")
     path = "/mnt/LOFAR0/pulsars/LuMP_LV614/pulsar_data_processed/" + pulsar + "/"
-
+    
     paas_m_files = sorted([file for file in os.listdir(path) if file.endswith(".paas.m")])
     paas_txt_files = sorted([file for file in os.listdir(path) if file.endswith(".paas.txt")])
     fscrs_files = sorted([file for file in os.listdir(path) if file.endswith(".fscr")])
@@ -83,7 +83,7 @@ def main(pulsar, componet_count):
     print("\n\n")
     
     print(len(paas_m_files), len(paas_txt_files), len(fscrs_files))
-        
+    
     colors = []
     symbols = []
     
@@ -119,8 +119,6 @@ def main(pulsar, componet_count):
 
         paas_txt_file = paas_txt_files[sb]
         paas_m_file = paas_m_files[sb]
-
-        #print(paas_txt_file, paas_m_file)
 
         phase_bin, model_data, gaussian_sum = np.loadtxt(path + paas_txt_file, usecols=(0, 1, 2), unpack=True)
         phase = np.linspace(0, 1, int(phase_bin[-1]) + 1)
@@ -269,6 +267,25 @@ def main(pulsar, componet_count):
                                  get_error(result_gauss6, "mu3"), get_error(result_gauss6, "mu4"),
                                  get_error(result_gauss6, "mu5"), get_error(result_gauss6, "mu6")]
                 
+        remove = False
+        bad_index = []
+        phase_fits_copy = phase_fits.copy()
+        for pf in phase_fits:
+            if pf > 1:
+                bad_index.append(phase_fits_copy.index(pf))
+                phase_fits.remove(pf)
+                remove = True
+                
+        if remove:
+            bad_amplitude_fits = []
+            bad_phase_fits_errors = []
+            for bi in bad_index:
+                bad_amplitude_fits.append(amplitude_fits[bi])
+                bad_phase_fits_errors.append(phase_fits_errors[bi])
+            for i in range(0, len(bad_index)):
+                amplitude_fits.remove(bad_amplitude_fits[i])
+                phase_fits_errors.remove(bad_phase_fits_errors[i])
+                    
         amplitude_fits_sorted = sorted(amplitude_fits, reverse=True)
         if componet_count == 2:
             index_a = amplitude_fits.index(amplitude_fits_sorted[0])
@@ -338,7 +355,6 @@ def main(pulsar, componet_count):
     
     #print("frequency", frequency)
     #print("phase_diff", phase_diff)
-    
     #symbols.remove(symbols[6])
     #colors.remove(colors[6])
     
