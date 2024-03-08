@@ -1,9 +1,7 @@
 import sys
-import os
 import subprocess
 from multiprocessing import Pool
 
-import baseband
 from baseband import vdif
 import numpy as np
 from tqdm import tqdm
@@ -64,8 +62,7 @@ def main(vex_file, input_file):
     for channs in channels_mapping:
         spw = channels_mapping.index(channs) + 1        
         split_data_inputs.append((orginal_vdif, channs, spw))
-        
-    
+
     p = Pool(16)
     p.map(split_data, split_data_inputs)
     
@@ -75,5 +72,3 @@ if __name__ == "__main__":
     input_file = sys.argv[2]
     main(vex_file, input_file)
     sys.exit()
-
-
