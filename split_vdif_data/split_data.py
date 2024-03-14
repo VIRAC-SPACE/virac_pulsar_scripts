@@ -45,7 +45,7 @@ def split_data(params):
 
 
 def main(vex_file, input_file):
-    channels = subprocess.check_output(["python2", "/home/pulsars/virac_pulsar_scripts/split_vdif_data/get_channels_mapping.py", vex_file]).decode("utf8").replace("[", "").replace("]", "").replace("(", "").replace(")", "").replace(",", "").replace("'", "").split()
+    channels = subprocess.check_output(["python2", "/home/oper/virac_pulsar_scripts/split_vdif_data/get_channels_mapping.py", vex_file]).decode("utf8").replace("[", "").replace("]", "").replace("(", "").replace(")", "").replace(",", "").replace("'", "").split()
     
     channels = [int(ch) for ch in channels]
     channels_mapping = []
