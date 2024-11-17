@@ -165,4 +165,8 @@ cython_debug/
 *.snp
 *.vex
 *.vix
+<<<<<<< HEAD
 
+=======
+*.pyc
+>>>>>>> bce46a3ecea97b9cd7f674b31f14b7f9c875603c
