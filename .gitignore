@@ -70,7 +70,6 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-<<<<<<< HEAD
 *.png
 *.csv
 =======
@@ -166,4 +165,4 @@ cython_debug/
 *.snp
 *.vex
 *.vix
->>>>>>> cd8c2bd242f0d36b04fd9b3c7f08581f92ac5477
+

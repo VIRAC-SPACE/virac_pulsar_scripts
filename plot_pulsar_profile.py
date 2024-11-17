@@ -75,6 +75,15 @@ def main(pulsar, componet_count):
     paas_txt_files = sorted([file for file in os.listdir(path) if file.endswith(".paas.txt")])
     fscrs_files = sorted([file for file in os.listdir(path) if file.endswith(".fscr")])
     
+    lv614_paas_m_files = [file for file in paas_m_files if "LV614" in file]
+    nenufar_paas_m_files = [file for file in paas_m_files if "NenuFAR" in file]
+    nrt_paas_m_files = [file for file in paas_m_files if "nuppi" in file]
+    
+    #paas_m_files = []
+    #paas_m_files.extend(lv614_paas_m_files)
+    #paas_m_files.extend(nenufar_paas_m_files)
+    #paas_m_files.extend(nrt_paas_m_files)
+    
     print(paas_m_files)
     print("\n\n")
     print(paas_txt_files)
@@ -82,7 +91,8 @@ def main(pulsar, componet_count):
     print(fscrs_files)
     print("\n\n")
     
-    print(len(paas_m_files), len(paas_txt_files), len(fscrs_files))
+    print("file lenght", len(paas_m_files), len(paas_txt_files), len(fscrs_files))
+    print("\n\n")
     
     colors = []
     symbols = []
@@ -97,21 +107,27 @@ def main(pulsar, componet_count):
             colors.append("b")
             symbols.append("o")
             telescopes.append("NRT")
+        elif "FR606" in tmp:
+            colors.append("k")
+            symbols.append("*")
+            telescopes.append("FR606")
         else:
             colors.append("g")
             symbols.append("D")
             telescopes.append("Nenufar")
+            
 
     phase_diff = []
     phase_diff_errors = []
     
-    
     frequency = np.array([get_freq(subprocess.check_output(["psredit", "-c", "freq", path + fscrs_file])) for fscrs_file in fscrs_files])
+    
     for sb in range(0, len(paas_m_files)):
         #if sb == 6:
             #continue
             
-        print(sb)
+        print("sb", sb, telescopes[sb])
+        #if telescopes[sb] == "LV614":
         fig1, ax1 = plt.subplots(nrows=1, ncols=2, figsize=(8, 8), dpi=90)
 
         ax1[0].set_title("SB " + str(sb) + " paas fit")
@@ -122,11 +138,15 @@ def main(pulsar, componet_count):
 
         phase_bin, model_data, gaussian_sum = np.loadtxt(path + paas_txt_file, usecols=(0, 1, 2), unpack=True)
         phase = np.linspace(0, 1, int(phase_bin[-1]) + 1)
-
+        
+        #if telescopes[sb] == "LV614":
         ax1[0].plot(phase, model_data, label="model data " + str(sb))
         ax1[0].plot(phase, gaussian_sum, label="gaussian sum " + str(sb))
 
         phase_init, sigma_init, intensity_init = np.loadtxt(path + paas_m_file, usecols=(0, 1, 2), unpack=True)
+        
+        print(path + paas_txt_file, path + paas_m_file)
+              
 
         if len(phase_init) == 2:
             g = gauss2(phase,
@@ -266,16 +286,17 @@ def main(pulsar, componet_count):
              phase_fits_errors = [get_error(result_gauss6, "mu1"), get_error(result_gauss6, "mu2"),
                                  get_error(result_gauss6, "mu3"), get_error(result_gauss6, "mu4"),
                                  get_error(result_gauss6, "mu5"), get_error(result_gauss6, "mu6")]
-                
+        #'''        
         remove = False
         bad_index = []
         phase_fits_copy = phase_fits.copy()
+        print("phase_fits", phase_fits)
         for pf in phase_fits:
             if pf > 1:
                 bad_index.append(phase_fits_copy.index(pf))
                 phase_fits.remove(pf)
                 remove = True
-                
+        
         if remove:
             bad_amplitude_fits = []
             bad_phase_fits_errors = []
@@ -285,19 +306,29 @@ def main(pulsar, componet_count):
             for i in range(0, len(bad_index)):
                 amplitude_fits.remove(bad_amplitude_fits[i])
                 phase_fits_errors.remove(bad_phase_fits_errors[i])
-                    
+        
+                
         amplitude_fits_sorted = sorted(amplitude_fits, reverse=True)
+        #print("amplitude_fits_sorted", amplitude_fits_sorted)
+       
         if componet_count == 2:
             index_a = amplitude_fits.index(amplitude_fits_sorted[0])
             index_b = amplitude_fits.index(amplitude_fits_sorted[1])
         elif componet_count == 3:
             index_a = phase_fits.index(np.max(phase_fits))
             index_b = phase_fits.index(np.min(phase_fits))
+            
+        if pulsar == "B1133+16" and   telescopes[sb] == "NRT":
+            index_a = 0
+            index_b = len(amplitude_fits) - 1   
+            
+        #print(len(amplitude_fits), index_a, index_b)
                            
         phase_diff.append(np.abs(phase_fits[index_b] - phase_fits[index_a]))
         phase_diff_errors.append(np.sqrt(
         phase_fits_errors[index_a] ** 2 + phase_fits_errors[index_b] ** 2))
         
+        #if telescopes[sb] == "LV614":
         ax1[1].plot(phase, g, label="init gauss")
         ax1[1].plot(phase, model_data, label="data")
         fig1.suptitle("Frequency:" + str(frequency[sb]) + " telscope: " + telescopes[sb])
@@ -334,8 +365,7 @@ def main(pulsar, componet_count):
     parameters = model.make_params(A=A_t, alpha=alpha_t, thata_min=thata_min_t)
     
     #print(frequency)
-    #frequency = np.array([40.13625, 77.63625, 2429, 2685, 1374, 1630])
-        
+       
     result = model.fit(data=phase_diff, x=frequency, params=parameters, method='leastsq', nan_policy='omit')
     
     a = result.params["A"].value
@@ -351,7 +381,7 @@ def main(pulsar, componet_count):
     with open(pulsar_fit_values_file, "a") as fit_out:
         fit_out.write(pulsar + "," + "%.3f" % a + "," + "%.3f" % alpha + "," + "%.3f" % thata_min + "," + "%.3f" % alpha_error + "," + "%.3f" % + thata_min_error + "\n")
 
-    fig2, ax2 = plt.subplots(nrows=1, ncols=1, figsize=(16, 16), dpi=150)
+    fig2, ax2 = plt.subplots(nrows=1, ncols=1, figsize=(9,6), dpi=150)
     
     #print("frequency", frequency)
     #print("phase_diff", phase_diff)
@@ -359,8 +389,9 @@ def main(pulsar, componet_count):
     #colors.remove(colors[6])
     
     for i in range(0, len(frequency)):
+        #print(frequency[i], phase_diff[i])
         ax2.scatter(frequency[i], phase_diff[i], c=colors[i], alpha=0.4, marker=symbols[i])
-        ax2.errorbar(frequency[i], phase_diff[i], yerr=np.abs(phase_diff_errors[i]) * 100, fmt=symbols[i], c=colors[i], xerr=10,  alpha=0)
+        ax2.errorbar(frequency[i], phase_diff[i], yerr=np.abs(phase_diff_errors[i]) * 100, fmt=symbols[i], c=colors[i], xerr=10, alpha=1)
     
     x = np.linspace(min(frequency), max(frequency), 1000)
     ax2.plot(x, profile_function(x, a, alpha, thata_min), label="New data", c="black", linewidth=2)
@@ -370,6 +401,13 @@ def main(pulsar, componet_count):
     ax2.set_xscale("log")
     ax2.legend()
     fig2.tight_layout()
+    top=0.994
+    bottom=0.125
+    left=0.13
+    right=0.995
+    hspace=0.2
+    wspace=0.2
+    fig2.subplots_adjust(top=top, bottom=bottom, left=left, right=right, hspace=hspace, wspace=wspace)
 
     fig2.savefig(pulsar + "_profile.png")
     plt.show()
